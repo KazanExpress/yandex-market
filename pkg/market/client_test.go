@@ -20,6 +20,7 @@ func getOptions() Options {
 	return Options{
 		OAuthClientID: clientID,
 		OAuthToken:    token,
+		APIEndpoint:   "https://api.partner.market.yandex.ru",
 	}
 }
 
@@ -91,6 +92,7 @@ func TestYandexMarketClient_RefreshFeed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	for _, feed := range feeds {
 		tests = append(tests, test{
 			name:    fmt.Sprintf("YandexMarketClient.RefreshFeed(%v, %v)", campaignID, feed.ID),

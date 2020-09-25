@@ -29,6 +29,9 @@ func NewClient(opt Options) *YandexMarketClient {
 			Timeout: 20 * time.Second,
 		}
 	}
+	if opt.APIEndpoint == "" {
+		opt.APIEndpoint = "https://api.partner.market.yandex.ru/"
+	}
 	return &YandexMarketClient{
 		options: opt,
 	}
