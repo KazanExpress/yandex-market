@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.0
+
+- `client.SetOfferPrices(campaignID, offers)` - Установить цену предложений
+- `client.GetOfferPrices(campaignID, ...)` - Получить установленные цены
+- `client.DeleteAllOffersPrices(campaignID)` - Удалить все установленные цены
+- `client.HideOffers(campaignID, offers)` - Скрыть предложения в маркете
+- `client.UnhideOffers(campaignID, offers)` - Возобновить показ скрытых предложений
+- `client.GetHiddenOffers(campaignID, ...)` - Список скрытых с помощью API предложений
+
 ## v0.1.1
 
 - по умолчанию `APIEndpoint = "https://api.partner.market.yandex.ru"`
