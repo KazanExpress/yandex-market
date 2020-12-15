@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/common/log"
+
 	"github.com/KazanExpress/yandex-market/pkg/market/models"
 )
 
@@ -25,15 +27,19 @@ type Options struct {
 	Client        *http.Client
 }
 
+const HTTPTimeout = 20 * time.Second
+
 func NewClient(opt Options) *YandexMarketClient {
 	if opt.Client == nil {
 		opt.Client = &http.Client{
-			Timeout: 20 * time.Second,
+			Timeout: HTTPTimeout,
 		}
 	}
+
 	if opt.APIEndpoint == "" {
 		opt.APIEndpoint = "https://api.partner.market.yandex.ru/"
 	}
+
 	return &YandexMarketClient{
 		options: opt,
 	}
@@ -43,20 +49,24 @@ func (c *YandexMarketClient) newRequest(method, path, query string, body io.Read
 	fullURL := c.options.APIEndpoint
 	// safe concat of API endpoint and path
 	if !strings.HasSuffix(fullURL, "/") {
-		fullURL = fullURL + "/"
+		fullURL += "/"
 	}
-	if strings.HasPrefix(path, "/") {
-		path = path[1:]
-	}
-	fullURL = fullURL + path
+
+	path = strings.TrimPrefix(path, "/")
+	fullURL += path
+
 	if !strings.HasSuffix(fullURL, ".json") {
-		fullURL = fullURL + ".json"
+		fullURL += ".json"
 	}
+
 	req, err := http.NewRequest(method, fullURL, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new request - %w", err)
 	}
-	req.Header.Add("authorization", fmt.Sprintf("OAuth oauth_token=%s, oauth_client_id=%s", c.options.OAuthToken, c.options.OAuthClientID))
+
+	req.Header.Add("authorization",
+		fmt.Sprintf("OAuth oauth_token=%s, oauth_client_id=%s",
+			c.options.OAuthToken, c.options.OAuthClientID))
 	req.Header.Add("user-agent", "KE/yandex-market client github.com/KazanExpress/yandex-market")
 	req.Header.Add("accept", "*/*")
 
@@ -78,7 +88,7 @@ func (c *YandexMarketClient) executeRequest(req *http.Request, jsonResponse inte
 	if err != nil {
 		return fmt.Errorf("failed to read from response body - %w", err)
 	}
-
+	log.Warnf("%s", string(body))
 	err = json.Unmarshal(body, jsonResponse)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshall json - %w", err)
@@ -97,7 +107,9 @@ func (c *YandexMarketClient) ListFeeds(campaignID int64) ([]models.Feed, error) 
 
 	feedResponse := &models.FeedResponse{}
 
-	return feedResponse.Feeds, c.executeRequest(req, feedResponse)
+	err = c.executeRequest(req, feedResponse)
+
+	return feedResponse.Feeds, err
 }
 
 // RefreshFeed - Позволяет сообщить, что магазин обновил прайс-лист.
@@ -124,6 +136,7 @@ func (c *YandexMarketClient) RefreshFeed(campaignID, feedID int64) error {
 }
 
 // SetOfferPrices - перезаписывает цены из фидов.
+// В одном запросе можно установить или удалить цены не более чем для 2000 предложений.
 func (c *YandexMarketClient) SetOfferPrices(campaignID int64, offers []models.Offer) error {
 	priceRequest := models.SetPriceRequest{Offers: offers}
 	requestBody, err := json.Marshal(priceRequest)
@@ -216,8 +229,10 @@ func (c *YandexMarketClient) DeleteAllOffersPrices(campaignID int64) error {
 }
 
 // HideOffers - скрывает предложения магазина.
+// Можно передать от одного до 500 предложений.
 func (c *YandexMarketClient) HideOffers(campaignID int64, offersToHide []models.HiddenOffer) error {
 	requestModel := models.OfferHideRequest{HiddenOffers: offersToHide}
+
 	requestBody, err := json.Marshal(requestModel)
 	if err != nil {
 		return err
@@ -312,4 +327,48 @@ func (c *YandexMarketClient) UnhideOffers(campaignID int64, offersToUnhide []mod
 	}
 
 	return nil
+}
+
+func (c *YandexMarketClient) ExploreOffers(campaignID int64, options models.ExploreOptions) (models.ExploreOffersResponse, error) {
+	query := url.Values{}
+
+	if options.Currency != "" {
+		query.Add("currency", options.Currency)
+	}
+
+	if options.ShopCategoryID != "" {
+		query.Add("shopCategoryId", options.ShopCategoryID)
+	}
+
+	if options.Query != "" {
+		query.Add("query", options.Query)
+	}
+
+	if options.Page > 0 {
+		query.Add("page", fmt.Sprintf("%v", options.Page))
+	}
+
+	if options.PageSize > 0 {
+		query.Add("pageSize", fmt.Sprintf("%v", options.PageSize))
+	}
+
+	if options.FeedID > 0 {
+		query.Add("feedId", fmt.Sprintf("%v", options.FeedID))
+	}
+
+	query.Add("matched", fmt.Sprintf("%v", options.Matched))
+
+	req, err := c.newRequest("GET", fmt.Sprintf("/v2/campaigns/%v/offers", campaignID), query.Encode(), nil)
+	if err != nil {
+		return models.ExploreOffersResponse{}, err
+	}
+
+	response := models.ExploreOffersResponse{}
+
+	err = c.executeRequest(req, &response)
+	if err != nil {
+		return models.ExploreOffersResponse{}, err
+	}
+
+	return response, nil
 }

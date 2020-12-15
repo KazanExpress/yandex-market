@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.0
+
+- `ExploreOffers(campaignID, options)` - Поиск по маркету внутри магазина.
+
 ## v0.2.0
 
 - `client.SetOfferPrices(campaignID, offers)` - Установить цену предложений

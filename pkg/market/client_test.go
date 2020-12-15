@@ -48,10 +48,6 @@ func getCampaign() int64 {
 }
 
 func TestYandexMarketClient_ListFeeds(t *testing.T) {
-	type fields struct {
-		options Options
-	}
-
 	type args struct {
 		campaignID int64
 	}
@@ -202,4 +198,14 @@ func TestYandexMarketClient_Hidden(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Zero(t, res.Total)
+}
+
+func TestYandexMarketClient_Explore(t *testing.T) {
+	c := getClient()
+	campaignID := getCampaign()
+
+	result, err := c.ExploreOffers(campaignID, models.ExploreOptions{Page: 1})
+	assert.NoError(t, err)
+
+	assert.Greater(t, result.Pager.Total, int64(0))
 }
