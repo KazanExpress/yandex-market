@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.1
+
+Remove debug logging.
+
 ## v0.3.0
 
 - `ExploreOffers(campaignID, options)` - Поиск по маркету внутри магазина.

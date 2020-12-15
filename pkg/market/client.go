@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/common/log"
-
 	"github.com/KazanExpress/yandex-market/pkg/market/models"
 )
 
@@ -88,7 +86,7 @@ func (c *YandexMarketClient) executeRequest(req *http.Request, jsonResponse inte
 	if err != nil {
 		return fmt.Errorf("failed to read from response body - %w", err)
 	}
-	log.Warnf("%s", string(body))
+
 	err = json.Unmarshal(body, jsonResponse)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshall json - %w", err)
