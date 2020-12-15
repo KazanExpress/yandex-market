@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.2
+
+Small fixes.
+
 ## v0.3.1
 
 Remove debug logging.

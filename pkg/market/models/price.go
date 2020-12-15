@@ -20,7 +20,7 @@ type FeedObj struct {
 type Price struct {
 	CurrencyID   string  `json:"currencyId"`
 	Value        float64 `json:"value"`
-	DiscountBase float64 `json:"discountBase"`
+	DiscountBase float64 `json:"discountBase,omitempty"`
 }
 
 type SetPriceResponse struct {
