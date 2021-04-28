@@ -30,16 +30,16 @@ func (o GetOfferPricesOptions) ToQueryArgs() url.Values {
 	return query
 }
 
-// WithLimitAndOffset sets limit and offset.
-func WithLimitAndOffset(limit, offset int32) GetOfferPricesOption {
+// WithLimitAndOffsetPriceOption sets limit and offset.
+func WithLimitAndOffsetPriceOption(limit, offset int32) GetOfferPricesOption {
 	return func(o *GetOfferPricesOptions) {
 		o.Limit = limit
 		o.Offset = offset
 	}
 }
 
-// WithPageNumberAndSize sets page number and page size.
-func WithPageNumberAndSize(number, size int32) GetOfferPricesOption {
+// WithPageNumberAndSizePriceOption sets page number and page size.
+func WithPageNumberAndSizePriceOption(number, size int32) GetOfferPricesOption {
 	return func(o *GetOfferPricesOptions) {
 		o.PageNumber = number
 		o.PageSize = size

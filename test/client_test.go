@@ -1,4 +1,4 @@
-package client
+package main
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/KazanExpress/yandex-market/pkg/market/client"
 	"github.com/KazanExpress/yandex-market/pkg/market/models"
 )
 
@@ -19,9 +20,9 @@ func TestMain(t *testing.M) {
 	os.Exit(t.Run())
 }
 
-func getClient() *YandexMarketClient {
-	return NewYandexMarketClient(
-		WithOAuth(os.Getenv("OAUTH_TOKEN"), os.Getenv("OAUTH_CLIENT_ID")),
+func getClient() *client.YandexMarketClient {
+	return client.NewYandexMarketClient(
+		client.WithOAuth(os.Getenv("OAUTH_TOKEN"), os.Getenv("OAUTH_CLIENT_ID")),
 	)
 }
 
