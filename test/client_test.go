@@ -3,12 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/KazanExpress/yandex-market/pkg/market/client"
 	"github.com/KazanExpress/yandex-market/pkg/market/models"
@@ -22,7 +25,11 @@ func TestMain(t *testing.M) {
 
 func getClient() *client.YandexMarketClient {
 	return client.NewYandexMarketClient(
+		client.WithUserAgent("Chromium"),
 		client.WithOAuth(os.Getenv("OAUTH_TOKEN"), os.Getenv("OAUTH_CLIENT_ID")),
+		client.WithHTTPClient(&http.Client{
+			Timeout: time.Second * 10,
+		}),
 	)
 }
 
@@ -148,7 +155,7 @@ func TestYandexMarketClient_Prices(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	offerPrices, err := c.GetOfferPrices(context.Background(), campaignID, nil, nil)
+	offerPrices, err := c.GetOfferPrices(context.Background(), campaignID)
 
 	assert.NoError(t, err)
 	assert.Len(t, offerPrices, 1, "there should be only 1 product set")
@@ -158,15 +165,6 @@ func TestYandexMarketClient_Prices(t *testing.T) {
 	assert.Equal(t, offerID, offerPrice.ID, "ids should match")
 	assert.Equal(t, discountBase, offerPrice.Price.DiscountBase, "discountBase should match")
 	assert.Equal(t, price, offerPrice.Price.Value, "price should match")
-
-	// WARN: uncomment accurately
-	// err = c.DeleteAllOffersPrices(campaignID)
-	// assert.NoError(t, err)
-
-	// offerPrices, err = c.GetOfferPrices(campaignID, nil, nil)
-
-	// assert.NoError(t, err)
-	// assert.Len(t, offerPrices, 0, "there should be no product price set")
 }
 
 func TestYandexMarketClient_Hidden(t *testing.T) {
@@ -176,7 +174,12 @@ func TestYandexMarketClient_Hidden(t *testing.T) {
 	feedID := getFeedID()
 	comment := "Временно закончился на складе"
 
-	err := c.HideOffers(context.Background(), campaignID, []models.HiddenOffer{
+	initRes, err := c.GetHiddenOffers(context.Background(), campaignID)
+	require.NoError(t, err)
+
+	initalHidden := initRes.Total
+
+	err = c.HideOffers(context.Background(), campaignID, []models.HiddenOffer{
 		{
 			FeedID:     feedID,
 			OfferID:    offerID,
@@ -204,7 +207,7 @@ func TestYandexMarketClient_Hidden(t *testing.T) {
 	res, err = c.GetHiddenOffers(context.Background(), campaignID)
 
 	assert.NoError(t, err)
-	assert.Zero(t, res.Total)
+	assert.Equal(t, res.Total, initalHidden)
 }
 
 func TestYandexMarketClient_Explore(t *testing.T) {

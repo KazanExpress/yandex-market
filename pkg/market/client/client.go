@@ -24,6 +24,7 @@ type Options struct {
 	OAuthToken    string
 	OAuthClientID string
 	APIEndpoint   string
+	UserAgent     string
 	Client        *http.Client
 	Logger        *zap.Logger
 }
@@ -53,12 +54,20 @@ func WithHTTPClient(client *http.Client) Option {
 	}
 }
 
+// WithUserAgent sets useragent.
+func WithUserAgent(useragent string) Option {
+	return func(o *Options) {
+		o.UserAgent = useragent
+	}
+}
+
 // NewYandexMarketClient is YandexMarketClient constructor.
 func NewYandexMarketClient(opts ...Option) *YandexMarketClient {
 	opt := &Options{
 		Client:      http.DefaultClient,
 		APIEndpoint: DefaultAPIEndpoint,
 		Logger:      zap.NewNop(),
+		UserAgent:   "KE/yandex-market client github.com/KazanExpress/yandex-market",
 	}
 
 	for _, o := range opts {
@@ -96,7 +105,7 @@ func (c *YandexMarketClient) newRequest(
 	req.Header.Add("authorization",
 		fmt.Sprintf("OAuth oauth_token=%s, oauth_client_id=%s",
 			c.options.OAuthToken, c.options.OAuthClientID))
-	req.Header.Add("user-agent", "KE/yandex-market client github.com/KazanExpress/yandex-market")
+	req.Header.Add("user-agent", c.options.UserAgent)
 	req.Header.Add("accept", "*/*")
 
 	req.URL.RawQuery = query
