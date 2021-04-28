@@ -33,3 +33,25 @@ type CommonError struct {
 func (e CommonError) Error() string {
 	return fmt.Sprintf("msg: %s, code: %v;", e.Message, e.Code)
 }
+
+// CommonPagingOptions common paging options.
+type CommonPagingOptions struct {
+	PageNumber int32
+	PageSize   int32
+	Limit      int32
+	Offset     int32
+}
+
+// Currency is enum for yandex market currencies.
+type Currency string
+
+const (
+	// CurrencyRUR is russian ruble.
+	CurrencyRUR Currency = "RUR"
+	// CurrencyBYN is belarussian ruble.
+	CurrencyBYN Currency = "BYN"
+	// CurrencyKZT is kazakh tenge.
+	CurrencyKZT Currency = "KZT"
+	// CurrencyUAH is ukrainian grivna.
+	CurrencyUAH Currency = "UAH"
+)

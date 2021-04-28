@@ -8,11 +8,7 @@ import (
 // GetHiddenOffersOptions describes pagination options for get hidden offers request.
 // Docs: https://yandex.ru/dev/market/partner/doc/dg/reference/get-campaigns-id-hidden-offers.html .
 type GetHiddenOffersOptions struct {
-	PageNumber int32
-	PageSize   int32
-
-	Limit  int32
-	Offset int32
+	CommonPagingOptions
 
 	PageToken string
 

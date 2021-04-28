@@ -196,7 +196,7 @@ func TestYandexMarketClient_Explore(t *testing.T) {
 	c := getClient()
 	campaignID := getCampaign()
 
-	result, err := c.ExploreOffers(context.Background(), campaignID, models.ExploreOptions{Page: 1})
+	result, err := c.ExploreOffers(context.Background(), campaignID, models.WithPaginationExploreOption(1, 10))
 	assert.NoError(t, err)
 
 	assert.Greater(t, result.Pager.Total, int64(0))

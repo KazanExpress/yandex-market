@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/KazanExpress/yandex-market/pkg/market/models"
 )
@@ -83,17 +82,15 @@ func (c *YandexMarketClient) SetOfferPrices(ctx context.Context, campaignID int6
 // GetOfferPrices returns prices set with SetOfferPrices.
 func (c *YandexMarketClient) GetOfferPrices(ctx context.Context,
 	campaignID int64,
-	limit *models.LimitOptions,
-	paging *models.PagingOptions) ([]models.GetPriceOfferModel, error) {
-	query := url.Values{}
+	opts ...models.GetOfferPricesOption,
+) ([]models.GetPriceOfferModel, error) {
+	o := models.GetOfferPricesOptions{}
 
-	if limit != nil {
-		query.Add("limit", fmt.Sprintf("%v", limit.Limit))
-		query.Add("offset", fmt.Sprintf("%v", limit.Offset))
-	} else if paging != nil {
-		query.Add("page", fmt.Sprintf("%v", paging.Page))
-		query.Add("pageSize", fmt.Sprintf("%v", paging.Size))
+	for _, opt := range opts {
+		opt(&o)
 	}
+
+	query := o.ToQueryArgs()
 
 	req, err := c.newRequest(ctx, http.MethodGet,
 		fmt.Sprintf("/v2/campaigns/%v/offer-prices", campaignID), query.Encode(), nil)
@@ -170,7 +167,7 @@ func (c *YandexMarketClient) HideOffers(
 	}
 
 	if hideOffersResponse.Status == models.StatusError {
-		return fmt.Errorf("failed to hide offers - %v", hideOffersResponse.Errors)
+		return fmt.Errorf("failed to hide offers: %w", hideOffersResponse.Errors)
 	}
 
 	return nil
@@ -248,35 +245,15 @@ func (c *YandexMarketClient) UnhideOffers(
 func (c *YandexMarketClient) ExploreOffers(
 	ctx context.Context,
 	campaignID int64,
-	options models.ExploreOptions,
+	opts ...models.ExploreOption,
 ) (models.ExploreOffersResponse, error) {
-	query := url.Values{}
+	o := models.ExploreOptions{}
 
-	if options.Currency != "" {
-		query.Add("currency", options.Currency)
+	for _, opt := range opts {
+		opt(&o)
 	}
 
-	if options.ShopCategoryID != "" {
-		query.Add("shopCategoryId", options.ShopCategoryID)
-	}
-
-	if options.Query != "" {
-		query.Add("query", options.Query)
-	}
-
-	if options.Page > 0 {
-		query.Add("page", fmt.Sprintf("%v", options.Page))
-	}
-
-	if options.PageSize > 0 {
-		query.Add("pageSize", fmt.Sprintf("%v", options.PageSize))
-	}
-
-	if options.FeedID > 0 {
-		query.Add("feedId", fmt.Sprintf("%v", options.FeedID))
-	}
-
-	query.Add("matched", fmt.Sprintf("%v", options.Matched))
+	query := o.ToQueryArgs()
 
 	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("/v2/campaigns/%v/offers", campaignID), query.Encode(), nil)
 	if err != nil {
