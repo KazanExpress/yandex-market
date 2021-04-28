@@ -20,9 +20,9 @@ type FeedObj struct {
 
 // Price describes offer price.
 type Price struct {
-	CurrencyID   string  `json:"currencyId"`
-	Value        float64 `json:"value"`
-	DiscountBase float64 `json:"discountBase,omitempty"`
+	CurrencyID   Currency `json:"currencyId"`
+	Value        float64  `json:"value"`
+	DiscountBase float64  `json:"discountBase,omitempty"`
 }
 
 // SetPriceResponse set price response structure.

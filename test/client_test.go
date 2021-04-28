@@ -40,6 +40,20 @@ func getCampaign() int64 {
 	return res
 }
 
+func getFeedID() int64 {
+	feedID := os.Getenv("FEED_ID")
+	if feedID == "" {
+		return 1
+	}
+
+	res, err := strconv.ParseInt(feedID, 10, 64)
+	if err != nil {
+		return 2
+	}
+
+	return res
+}
+
 func TestYandexMarketClient_ListFeeds(t *testing.T) {
 	type args struct {
 		campaignID int64
@@ -114,8 +128,8 @@ func TestYandexMarketClient_RefreshFeed(t *testing.T) {
 func TestYandexMarketClient_Prices(t *testing.T) {
 	c := getClient()
 	campaignID := getCampaign()
-	offerID := "169690W424150"
-	feedID := int64(820450)
+	offerID := os.Getenv("OFFER_ID")
+	feedID := getFeedID()
 	discountBase := 300.0
 	price := 250.0
 
@@ -125,7 +139,7 @@ func TestYandexMarketClient_Prices(t *testing.T) {
 			Delete: false,
 			ID:     offerID,
 			Price: models.Price{
-				CurrencyID:   "RUR",
+				CurrencyID:   models.CurrencyRUR,
 				DiscountBase: discountBase,
 				Value:        price,
 			},
@@ -158,8 +172,8 @@ func TestYandexMarketClient_Prices(t *testing.T) {
 func TestYandexMarketClient_Hidden(t *testing.T) {
 	c := getClient()
 	campaignID := getCampaign()
-	offerID := "169690W424150"
-	feedID := int64(820450)
+	offerID := os.Getenv("OFFER_ID")
+	feedID := getFeedID()
 	comment := "Временно закончился на складе"
 
 	err := c.HideOffers(context.Background(), campaignID, []models.HiddenOffer{
