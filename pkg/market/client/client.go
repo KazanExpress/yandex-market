@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
+	"net/url"
 
 	"go.uber.org/zap"
 )
 
 const (
 	// DefaultAPIEndpoint is a default yandex market api endpoint.
-	DefaultAPIEndpoint = "https://api.partner.market.yandex.ru/"
+	DefaultAPIEndpoint = `https://api.partner.market.yandex.ru/`
 
 	// DefaultUserAgent is a default user agent used in requests to API.
 	DefaultUserAgent = "KE/yandex-market client github.com/KazanExpress/yandex-market"
@@ -93,23 +93,18 @@ func NewYandexMarketClient(opts ...Option) *YandexMarketClient {
 
 func (c *YandexMarketClient) newRequest(
 	ctx context.Context,
-	method, path, query string,
+	method, reqPath, query string,
 	body io.Reader,
 ) (*http.Request, error) {
-	fullURL := c.options.APIEndpoint
-	// safe concat of API endpoint and path
-	if !strings.HasSuffix(fullURL, "/") {
-		fullURL += "/"
+	fullURL, err := url.ParseRequestURI(c.options.APIEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("url parse request uri: %w", err)
 	}
 
-	path = strings.TrimPrefix(path, "/")
-	fullURL += path
+	fullURL.Path = reqPath + ".json"
+	fullURL.RawQuery = query
 
-	if !strings.HasSuffix(fullURL, ".json") {
-		fullURL += ".json"
-	}
-
-	req, err := http.NewRequestWithContext(ctx, method, fullURL, body)
+	req, err := http.NewRequestWithContext(ctx, method, fullURL.String(), body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new request: %w", err)
 	}
@@ -119,8 +114,6 @@ func (c *YandexMarketClient) newRequest(
 			c.options.OAuthToken, c.options.OAuthClientID))
 	req.Header.Add("user-agent", c.options.UserAgent)
 	req.Header.Add("accept", "*/*")
-
-	req.URL.RawQuery = query
 
 	return req, nil
 }

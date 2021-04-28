@@ -41,7 +41,7 @@ func (c *YandexMarketClient) RefreshFeed(ctx context.Context, campaignID, feedID
 		return err
 	}
 
-	if refreshResponse.Status == models.StatusError {
+	if refreshResponse.Status.IsErrorStatus() {
 		return fmt.Errorf("failed to refresh feed: %w", refreshResponse.Errors)
 	}
 
@@ -72,7 +72,7 @@ func (c *YandexMarketClient) SetOfferPrices(ctx context.Context, campaignID int6
 		return err
 	}
 
-	if setPriceResponse.Status == models.StatusError {
+	if setPriceResponse.Status.IsErrorStatus() {
 		return fmt.Errorf("failed to set prices: %w", setPriceResponse.Errors)
 	}
 
@@ -105,7 +105,7 @@ func (c *YandexMarketClient) GetOfferPrices(ctx context.Context,
 		return nil, err
 	}
 
-	if getPriceResponse.Status == models.StatusError {
+	if getPriceResponse.Status.IsErrorStatus() {
 		return nil, fmt.Errorf("failed to get prices: %w", getPriceResponse.Errors)
 	}
 
@@ -130,7 +130,7 @@ func (c *YandexMarketClient) DeleteAllOffersPrices(ctx context.Context, campaign
 		return err
 	}
 
-	if deletePricesResponse.Status == models.StatusError {
+	if deletePricesResponse.Status.IsErrorStatus() {
 		return fmt.Errorf("failed to delete prices: %w", deletePricesResponse.Errors)
 	}
 
@@ -166,7 +166,7 @@ func (c *YandexMarketClient) HideOffers(
 		return err
 	}
 
-	if hideOffersResponse.Status == models.StatusError {
+	if hideOffersResponse.Status.IsErrorStatus() {
 		return fmt.Errorf("failed to hide offers: %w", hideOffersResponse.Errors)
 	}
 
@@ -200,7 +200,7 @@ func (c *YandexMarketClient) GetHiddenOffers(ctx context.Context,
 		return models.GetHiddenOfferResult{}, err
 	}
 
-	if getHiddenOffersResponse.Status == models.StatusError {
+	if getHiddenOffersResponse.Status.IsErrorStatus() {
 		return models.GetHiddenOfferResult{}, fmt.Errorf("failed to hide offers: %w", getHiddenOffersResponse.Errors)
 	}
 
@@ -234,7 +234,7 @@ func (c *YandexMarketClient) UnhideOffers(
 		return err
 	}
 
-	if unhideResponse.Status == models.StatusError {
+	if unhideResponse.Status.IsErrorStatus() {
 		return fmt.Errorf("failed to unhide offers: %w", unhideResponse.Errors)
 	}
 
