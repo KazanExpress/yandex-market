@@ -1,6 +1,7 @@
-package market
+package client
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -18,19 +19,10 @@ func TestMain(t *testing.M) {
 	os.Exit(t.Run())
 }
 
-func getOptions() Options {
-	token := os.Getenv("OAUTH_TOKEN")
-	clientID := os.Getenv("OAUTH_CLIENT_ID")
-
-	return Options{
-		OAuthClientID: clientID,
-		OAuthToken:    token,
-		APIEndpoint:   "https://api.partner.market.yandex.ru",
-	}
-}
-
 func getClient() *YandexMarketClient {
-	return NewClient(getOptions())
+	return NewYandexMarketClient(
+		WithOAuth(os.Getenv("OAUTH_TOKEN"), os.Getenv("OAUTH_CLIENT_ID")),
+	)
 }
 
 func getCampaign() int64 {
@@ -69,7 +61,7 @@ func TestYandexMarketClient_ListFeeds(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := getClient()
-			got, err := c.ListFeeds(tt.args.campaignID)
+			got, err := c.ListFeeds(context.Background(), tt.args.campaignID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("YandexMarketClient.ListFeeds() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -96,7 +88,7 @@ func TestYandexMarketClient_RefreshFeed(t *testing.T) {
 	tests := []test{}
 	c := getClient()
 	campaignID := getCampaign()
-	feeds, err := c.ListFeeds(campaignID)
+	feeds, err := c.ListFeeds(context.Background(), campaignID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +103,7 @@ func TestYandexMarketClient_RefreshFeed(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := c.RefreshFeed(tt.args.campaignID, tt.args.feedID); (err != nil) != tt.wantErr {
+			if err := c.RefreshFeed(context.Background(), tt.args.campaignID, tt.args.feedID); (err != nil) != tt.wantErr {
 				t.Errorf("YandexMarketClient.RefreshFeed() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -126,7 +118,7 @@ func TestYandexMarketClient_Prices(t *testing.T) {
 	discountBase := 300.0
 	price := 250.0
 
-	err := c.SetOfferPrices(campaignID, []models.Offer{
+	err := c.SetOfferPrices(context.Background(), campaignID, []models.Offer{
 		{
 			Feed:   models.FeedObj{ID: feedID},
 			Delete: false,
@@ -141,7 +133,7 @@ func TestYandexMarketClient_Prices(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	offerPrices, err := c.GetOfferPrices(campaignID, nil, nil)
+	offerPrices, err := c.GetOfferPrices(context.Background(), campaignID, nil, nil)
 
 	assert.NoError(t, err)
 	assert.Len(t, offerPrices, 1, "there should be only 1 product set")
@@ -169,7 +161,7 @@ func TestYandexMarketClient_Hidden(t *testing.T) {
 	feedID := int64(820450)
 	comment := "Временно закончился на складе"
 
-	err := c.HideOffers(campaignID, []models.HiddenOffer{
+	err := c.HideOffers(context.Background(), campaignID, []models.HiddenOffer{
 		{
 			FeedID:     feedID,
 			OfferID:    offerID,
@@ -179,12 +171,12 @@ func TestYandexMarketClient_Hidden(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	res, err := c.GetHiddenOffers(campaignID, "", nil, nil)
+	res, err := c.GetHiddenOffers(context.Background(), campaignID)
 
 	assert.NoError(t, err)
 	assert.NotZero(t, res.Total)
 
-	err = c.UnhideOffers(campaignID, []models.OfferToUnhide{
+	err = c.UnhideOffers(context.Background(), campaignID, []models.OfferToUnhide{
 		{
 			FeedID:  feedID,
 			OfferID: offerID,
@@ -194,7 +186,7 @@ func TestYandexMarketClient_Hidden(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, res.Total)
 
-	res, err = c.GetHiddenOffers(campaignID, "", nil, nil)
+	res, err = c.GetHiddenOffers(context.Background(), campaignID)
 
 	assert.NoError(t, err)
 	assert.Zero(t, res.Total)
@@ -204,7 +196,7 @@ func TestYandexMarketClient_Explore(t *testing.T) {
 	c := getClient()
 	campaignID := getCampaign()
 
-	result, err := c.ExploreOffers(campaignID, models.ExploreOptions{Page: 1})
+	result, err := c.ExploreOffers(context.Background(), campaignID, models.ExploreOptions{Page: 1})
 	assert.NoError(t, err)
 
 	assert.Greater(t, result.Pager.Total, int64(0))

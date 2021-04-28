@@ -4,8 +4,8 @@ type ExploreOptions struct {
 	Currency       string
 	FeedID         int64
 	Matched        bool
-	Page           int
-	PageSize       int
+	Page           int32
+	PageSize       int32
 	Query          string
 	ShopCategoryID string
 }
