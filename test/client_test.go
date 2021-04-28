@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -18,8 +17,6 @@ import (
 )
 
 func TestMain(t *testing.M) {
-	_ = godotenv.Load()
-
 	os.Exit(t.Run())
 }
 

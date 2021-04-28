@@ -11,8 +11,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// DefaultAPIEndpoint is a default yandex market api endpoint.
-const DefaultAPIEndpoint = "https://api.partner.market.yandex.ru/"
+const (
+	// DefaultAPIEndpoint is a default yandex market api endpoint.
+	DefaultAPIEndpoint = "https://api.partner.market.yandex.ru/"
+
+	// DefaultUserAgent is a default user agent used in requests to API.
+	DefaultUserAgent = "KE/yandex-market client github.com/KazanExpress/yandex-market"
+)
 
 // YandexMarketClient wraps API calls to yandex market.
 type YandexMarketClient struct {
@@ -61,13 +66,20 @@ func WithUserAgent(useragent string) Option {
 	}
 }
 
+// WithAPIEndpoint sets API endpoint.
+func WithAPIEndpoint(endpoint string) Option {
+	return func(o *Options) {
+		o.APIEndpoint = endpoint
+	}
+}
+
 // NewYandexMarketClient is YandexMarketClient constructor.
 func NewYandexMarketClient(opts ...Option) *YandexMarketClient {
 	opt := &Options{
 		Client:      http.DefaultClient,
 		APIEndpoint: DefaultAPIEndpoint,
 		Logger:      zap.NewNop(),
-		UserAgent:   "KE/yandex-market client github.com/KazanExpress/yandex-market",
+		UserAgent:   DefaultUserAgent,
 	}
 
 	for _, o := range opts {
