@@ -21,7 +21,8 @@ const (
 
 // YandexMarketClient wraps API calls to yandex market.
 type YandexMarketClient struct {
-	options *Options
+	options    *Options
+	authHeader string
 }
 
 // Options client constructor params.
@@ -88,6 +89,8 @@ func NewYandexMarketClient(opts ...Option) *YandexMarketClient {
 
 	return &YandexMarketClient{
 		options: opt,
+		authHeader: fmt.Sprintf("OAuth oauth_token=%s, oauth_client_id=%s",
+			opt.OAuthToken, opt.OAuthClientID),
 	}
 }
 
@@ -110,9 +113,7 @@ func (c *YandexMarketClient) newRequest(
 		return nil, fmt.Errorf("failed to create new request: %w", err)
 	}
 
-	req.Header.Add("authorization",
-		fmt.Sprintf("OAuth oauth_token=%s, oauth_client_id=%s",
-			c.options.OAuthToken, c.options.OAuthClientID))
+	req.Header.Add("authorization", c.authHeader)
 	req.Header.Add("user-agent", c.options.UserAgent)
 	req.Header.Add("accept", "*/*")
 

@@ -14,7 +14,7 @@ import (
 
 // ListFeeds returns list of feeds placed in Yandex.Market for given campaign.
 func (c *YandexMarketClient) ListFeeds(ctx context.Context, campaignID int64) ([]models.Feed, error) {
-	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("/v2/campaigns/%v/feeds", campaignID), url.Values{}, nil)
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("/v2/campaigns/%d/feeds", campaignID), url.Values{}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (c *YandexMarketClient) ListFeeds(ctx context.Context, campaignID int64) ([
 func (c *YandexMarketClient) RefreshFeed(ctx context.Context, campaignID, feedID int64) error {
 	req, err := c.newRequest(ctx,
 		http.MethodPost,
-		fmt.Sprintf("/campaigns/%v/feeds/%v/refresh", campaignID, feedID), url.Values{}, nil)
+		fmt.Sprintf("/campaigns/%d/feeds/%d/refresh", campaignID, feedID), url.Values{}, nil)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (c *YandexMarketClient) SetOfferPrices(ctx context.Context, campaignID int6
 	}
 
 	req, err := c.newRequest(ctx, http.MethodPost,
-		fmt.Sprintf("/v2/campaigns/%v/offer-prices/updates", campaignID),
+		fmt.Sprintf("/v2/campaigns/%d/offer-prices/updates", campaignID),
 		url.Values{},
 		bytes.NewReader(requestBody))
 	if err != nil {
@@ -95,7 +95,7 @@ func (c *YandexMarketClient) GetOfferPrices(ctx context.Context,
 	query := o.ToQueryArgs()
 
 	req, err := c.newRequest(ctx, http.MethodGet,
-		fmt.Sprintf("/v2/campaigns/%v/offer-prices", campaignID), query, nil)
+		fmt.Sprintf("/v2/campaigns/%d/offer-prices", campaignID), query, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (c *YandexMarketClient) GetOfferPrices(ctx context.Context,
 // After deleting prices from the feed will be used.
 func (c *YandexMarketClient) DeleteAllOffersPrices(ctx context.Context, campaignID int64) error {
 	req, err := c.newRequest(ctx, http.MethodPost,
-		fmt.Sprintf("/v2/campaigns/%v/offer-prices/removals", campaignID),
+		fmt.Sprintf("/v2/campaigns/%d/offer-prices/removals", campaignID),
 		url.Values{},
 		strings.NewReader(`{"removeAll": true}`))
 	if err != nil {
@@ -154,7 +154,7 @@ func (c *YandexMarketClient) HideOffers(
 	}
 
 	req, err := c.newRequest(ctx, http.MethodPost,
-		fmt.Sprintf("v2/campaigns/%v/hidden-offers", campaignID),
+		fmt.Sprintf("v2/campaigns/%d/hidden-offers", campaignID),
 		url.Values{},
 		bytes.NewReader(requestBody))
 	if err != nil {
@@ -188,7 +188,7 @@ func (c *YandexMarketClient) GetHiddenOffers(ctx context.Context,
 	query := o.ToQueryArgs()
 
 	req, err := c.newRequest(ctx, http.MethodGet,
-		fmt.Sprintf("/v2/campaigns/%v/hidden-offers", campaignID),
+		fmt.Sprintf("/v2/campaigns/%d/hidden-offers", campaignID),
 		query,
 		nil)
 	if err != nil {
@@ -222,7 +222,7 @@ func (c *YandexMarketClient) UnhideOffers(
 	}
 
 	req, err := c.newRequest(ctx, http.MethodDelete,
-		fmt.Sprintf("/v2/campaigns/%v/hidden-offers", campaignID),
+		fmt.Sprintf("/v2/campaigns/%d/hidden-offers", campaignID),
 		url.Values{},
 		bytes.NewReader(requestBody))
 	if err != nil {
@@ -257,7 +257,7 @@ func (c *YandexMarketClient) ExploreOffers(
 
 	query := o.ToQueryArgs()
 
-	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("/v2/campaigns/%v/offers", campaignID), query, nil)
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("/v2/campaigns/%d/offers", campaignID), query, nil)
 	if err != nil {
 		return models.ExploreOffersResponse{}, err
 	}

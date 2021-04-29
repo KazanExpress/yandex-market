@@ -31,7 +31,7 @@ type CommonError struct {
 
 // Error implement error interface.
 func (e CommonError) Error() string {
-	return fmt.Sprintf("msg: %s, code: %v;", e.Message, e.Code)
+	return fmt.Sprintf("msg: %s, code: %s;", e.Message, e.Code)
 }
 
 // CommonPagingOptions common paging options.

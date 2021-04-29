@@ -33,7 +33,7 @@ func main() {
     }
 
     for _, feed := range feeds {
-        fmt.Sprintf("there is feed %v with url %s", feed.ID, feed.URL)
+        fmt.Sprintf("there is feed %d with url %s", feed.ID, feed.URL)
     }
 }
 ```

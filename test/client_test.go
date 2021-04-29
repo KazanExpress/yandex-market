@@ -114,7 +114,7 @@ func TestYandexMarketClient_RefreshFeed(t *testing.T) {
 
 	for _, feed := range feeds {
 		tests = append(tests, test{
-			name:    fmt.Sprintf("YandexMarketClient.RefreshFeed(%v, %v)", campaignID, feed.ID),
+			name:    fmt.Sprintf("YandexMarketClient.RefreshFeed(%d, %d)", campaignID, feed.ID),
 			args:    args{campaignID, feed.ID},
 			wantErr: false,
 		})
