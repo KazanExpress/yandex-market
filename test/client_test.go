@@ -1,36 +1,33 @@
-package market
+package main
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/KazanExpress/yandex-market/pkg/market/client"
 	"github.com/KazanExpress/yandex-market/pkg/market/models"
 )
 
 func TestMain(t *testing.M) {
-	_ = godotenv.Load()
-
 	os.Exit(t.Run())
 }
 
-func getOptions() Options {
-	token := os.Getenv("OAUTH_TOKEN")
-	clientID := os.Getenv("OAUTH_CLIENT_ID")
-
-	return Options{
-		OAuthClientID: clientID,
-		OAuthToken:    token,
-		APIEndpoint:   "https://api.partner.market.yandex.ru",
-	}
-}
-
-func getClient() *YandexMarketClient {
-	return NewClient(getOptions())
+func getClient() *client.YandexMarketClient {
+	return client.NewYandexMarketClient(
+		client.WithUserAgent("Chromium"),
+		client.WithOAuth(os.Getenv("OAUTH_TOKEN"), os.Getenv("OAUTH_CLIENT_ID")),
+		client.WithHTTPClient(&http.Client{
+			Timeout: time.Second * 10,
+		}),
+	)
 }
 
 func getCampaign() int64 {
@@ -40,6 +37,20 @@ func getCampaign() int64 {
 	}
 
 	res, err := strconv.ParseInt(camp, 10, 64)
+	if err != nil {
+		return 2
+	}
+
+	return res
+}
+
+func getFeedID() int64 {
+	feedID := os.Getenv("FEED_ID")
+	if feedID == "" {
+		return 1
+	}
+
+	res, err := strconv.ParseInt(feedID, 10, 64)
 	if err != nil {
 		return 2
 	}
@@ -69,7 +80,7 @@ func TestYandexMarketClient_ListFeeds(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := getClient()
-			got, err := c.ListFeeds(tt.args.campaignID)
+			got, err := c.ListFeeds(context.Background(), tt.args.campaignID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("YandexMarketClient.ListFeeds() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -96,14 +107,14 @@ func TestYandexMarketClient_RefreshFeed(t *testing.T) {
 	tests := []test{}
 	c := getClient()
 	campaignID := getCampaign()
-	feeds, err := c.ListFeeds(campaignID)
+	feeds, err := c.ListFeeds(context.Background(), campaignID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, feed := range feeds {
 		tests = append(tests, test{
-			name:    fmt.Sprintf("YandexMarketClient.RefreshFeed(%v, %v)", campaignID, feed.ID),
+			name:    fmt.Sprintf("YandexMarketClient.RefreshFeed(%d, %d)", campaignID, feed.ID),
 			args:    args{campaignID, feed.ID},
 			wantErr: false,
 		})
@@ -111,7 +122,7 @@ func TestYandexMarketClient_RefreshFeed(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := c.RefreshFeed(tt.args.campaignID, tt.args.feedID); (err != nil) != tt.wantErr {
+			if err := c.RefreshFeed(context.Background(), tt.args.campaignID, tt.args.feedID); (err != nil) != tt.wantErr {
 				t.Errorf("YandexMarketClient.RefreshFeed() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -121,18 +132,18 @@ func TestYandexMarketClient_RefreshFeed(t *testing.T) {
 func TestYandexMarketClient_Prices(t *testing.T) {
 	c := getClient()
 	campaignID := getCampaign()
-	offerID := "169690W424150"
-	feedID := int64(820450)
+	offerID := os.Getenv("OFFER_ID")
+	feedID := getFeedID()
 	discountBase := 300.0
 	price := 250.0
 
-	err := c.SetOfferPrices(campaignID, []models.Offer{
+	err := c.SetOfferPrices(context.Background(), campaignID, []models.Offer{
 		{
 			Feed:   models.FeedObj{ID: feedID},
 			Delete: false,
 			ID:     offerID,
 			Price: models.Price{
-				CurrencyID:   "RUR",
+				CurrencyID:   models.CurrencyRUR,
 				DiscountBase: discountBase,
 				Value:        price,
 			},
@@ -141,7 +152,7 @@ func TestYandexMarketClient_Prices(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	offerPrices, err := c.GetOfferPrices(campaignID, nil, nil)
+	offerPrices, err := c.GetOfferPrices(context.Background(), campaignID)
 
 	assert.NoError(t, err)
 	assert.Len(t, offerPrices, 1, "there should be only 1 product set")
@@ -151,25 +162,21 @@ func TestYandexMarketClient_Prices(t *testing.T) {
 	assert.Equal(t, offerID, offerPrice.ID, "ids should match")
 	assert.Equal(t, discountBase, offerPrice.Price.DiscountBase, "discountBase should match")
 	assert.Equal(t, price, offerPrice.Price.Value, "price should match")
-
-	// WARN: uncomment accurately
-	// err = c.DeleteAllOffersPrices(campaignID)
-	// assert.NoError(t, err)
-
-	// offerPrices, err = c.GetOfferPrices(campaignID, nil, nil)
-
-	// assert.NoError(t, err)
-	// assert.Len(t, offerPrices, 0, "there should be no product price set")
 }
 
 func TestYandexMarketClient_Hidden(t *testing.T) {
 	c := getClient()
 	campaignID := getCampaign()
-	offerID := "169690W424150"
-	feedID := int64(820450)
+	offerID := os.Getenv("OFFER_ID")
+	feedID := getFeedID()
 	comment := "Временно закончился на складе"
 
-	err := c.HideOffers(campaignID, []models.HiddenOffer{
+	initRes, err := c.GetHiddenOffers(context.Background(), campaignID)
+	require.NoError(t, err)
+
+	initalHidden := initRes.Total
+
+	err = c.HideOffers(context.Background(), campaignID, []models.HiddenOffer{
 		{
 			FeedID:     feedID,
 			OfferID:    offerID,
@@ -179,12 +186,12 @@ func TestYandexMarketClient_Hidden(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	res, err := c.GetHiddenOffers(campaignID, "", nil, nil)
+	res, err := c.GetHiddenOffers(context.Background(), campaignID)
 
 	assert.NoError(t, err)
 	assert.NotZero(t, res.Total)
 
-	err = c.UnhideOffers(campaignID, []models.OfferToUnhide{
+	err = c.UnhideOffers(context.Background(), campaignID, []models.OfferToUnhide{
 		{
 			FeedID:  feedID,
 			OfferID: offerID,
@@ -194,17 +201,17 @@ func TestYandexMarketClient_Hidden(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, res.Total)
 
-	res, err = c.GetHiddenOffers(campaignID, "", nil, nil)
+	res, err = c.GetHiddenOffers(context.Background(), campaignID)
 
 	assert.NoError(t, err)
-	assert.Zero(t, res.Total)
+	assert.Equal(t, res.Total, initalHidden)
 }
 
 func TestYandexMarketClient_Explore(t *testing.T) {
 	c := getClient()
 	campaignID := getCampaign()
 
-	result, err := c.ExploreOffers(campaignID, models.ExploreOptions{Page: 1})
+	result, err := c.ExploreOffers(context.Background(), campaignID, models.WithPaginationExploreOption(1, 10))
 	assert.NoError(t, err)
 
 	assert.Greater(t, result.Pager.Total, int64(0))

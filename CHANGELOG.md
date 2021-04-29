@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.4.0
+
+- Translate all godocs to english.
+
+- Update client methods signature to pass `context.Context`.
+
+- Update methods to use option pattern.
+
+- Refactor code.
+
 ## v0.3.2
 
 Small fixes.
