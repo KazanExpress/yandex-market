@@ -52,7 +52,7 @@ const (
 	StatusError Status = "ERROR"
 )
 
-// IsErrorStatus returns true if status is StatusError.
-func (s Status) IsErrorStatus() bool {
+// IsError returns true if status is StatusError.
+func (s Status) IsError() bool {
 	return s == StatusError
 }

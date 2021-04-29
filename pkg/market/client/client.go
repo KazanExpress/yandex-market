@@ -93,7 +93,8 @@ func NewYandexMarketClient(opts ...Option) *YandexMarketClient {
 
 func (c *YandexMarketClient) newRequest(
 	ctx context.Context,
-	method, reqPath, query string,
+	method, reqPath string,
+	query url.Values,
 	body io.Reader,
 ) (*http.Request, error) {
 	fullURL, err := url.ParseRequestURI(c.options.APIEndpoint)
@@ -102,7 +103,7 @@ func (c *YandexMarketClient) newRequest(
 	}
 
 	fullURL.Path = reqPath + ".json"
-	fullURL.RawQuery = query
+	fullURL.RawQuery = query.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, method, fullURL.String(), body)
 	if err != nil {

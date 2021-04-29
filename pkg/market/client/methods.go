@@ -6,13 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/KazanExpress/yandex-market/pkg/market/models"
 )
 
 // ListFeeds returns list of feeds placed in Yandex.Market for given campaign.
 func (c *YandexMarketClient) ListFeeds(ctx context.Context, campaignID int64) ([]models.Feed, error) {
-	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("/v2/campaigns/%v/feeds", campaignID), "", nil)
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("/v2/campaigns/%v/feeds", campaignID), url.Values{}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +31,7 @@ func (c *YandexMarketClient) ListFeeds(ctx context.Context, campaignID int64) ([
 func (c *YandexMarketClient) RefreshFeed(ctx context.Context, campaignID, feedID int64) error {
 	req, err := c.newRequest(ctx,
 		http.MethodPost,
-		fmt.Sprintf("/campaigns/%v/feeds/%v/refresh", campaignID, feedID), "", nil)
+		fmt.Sprintf("/campaigns/%v/feeds/%v/refresh", campaignID, feedID), url.Values{}, nil)
 	if err != nil {
 		return err
 	}
@@ -41,7 +43,7 @@ func (c *YandexMarketClient) RefreshFeed(ctx context.Context, campaignID, feedID
 		return err
 	}
 
-	if refreshResponse.Status.IsErrorStatus() {
+	if refreshResponse.Status.IsError() {
 		return fmt.Errorf("failed to refresh feed: %w", refreshResponse.Errors)
 	}
 
@@ -59,7 +61,7 @@ func (c *YandexMarketClient) SetOfferPrices(ctx context.Context, campaignID int6
 
 	req, err := c.newRequest(ctx, http.MethodPost,
 		fmt.Sprintf("/v2/campaigns/%v/offer-prices/updates", campaignID),
-		"",
+		url.Values{},
 		bytes.NewReader(requestBody))
 	if err != nil {
 		return err
@@ -72,7 +74,7 @@ func (c *YandexMarketClient) SetOfferPrices(ctx context.Context, campaignID int6
 		return err
 	}
 
-	if setPriceResponse.Status.IsErrorStatus() {
+	if setPriceResponse.Status.IsError() {
 		return fmt.Errorf("failed to set prices: %w", setPriceResponse.Errors)
 	}
 
@@ -93,7 +95,7 @@ func (c *YandexMarketClient) GetOfferPrices(ctx context.Context,
 	query := o.ToQueryArgs()
 
 	req, err := c.newRequest(ctx, http.MethodGet,
-		fmt.Sprintf("/v2/campaigns/%v/offer-prices", campaignID), query.Encode(), nil)
+		fmt.Sprintf("/v2/campaigns/%v/offer-prices", campaignID), query, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +107,7 @@ func (c *YandexMarketClient) GetOfferPrices(ctx context.Context,
 		return nil, err
 	}
 
-	if getPriceResponse.Status.IsErrorStatus() {
+	if getPriceResponse.Status.IsError() {
 		return nil, fmt.Errorf("failed to get prices: %w", getPriceResponse.Errors)
 	}
 
@@ -117,8 +119,8 @@ func (c *YandexMarketClient) GetOfferPrices(ctx context.Context,
 func (c *YandexMarketClient) DeleteAllOffersPrices(ctx context.Context, campaignID int64) error {
 	req, err := c.newRequest(ctx, http.MethodPost,
 		fmt.Sprintf("/v2/campaigns/%v/offer-prices/removals", campaignID),
-		"",
-		bytes.NewReader([]byte(`{"removeAll": true}`)))
+		url.Values{},
+		strings.NewReader(`{"removeAll": true}`))
 	if err != nil {
 		return err
 	}
@@ -130,7 +132,7 @@ func (c *YandexMarketClient) DeleteAllOffersPrices(ctx context.Context, campaign
 		return err
 	}
 
-	if deletePricesResponse.Status.IsErrorStatus() {
+	if deletePricesResponse.Status.IsError() {
 		return fmt.Errorf("failed to delete prices: %w", deletePricesResponse.Errors)
 	}
 
@@ -153,7 +155,7 @@ func (c *YandexMarketClient) HideOffers(
 
 	req, err := c.newRequest(ctx, http.MethodPost,
 		fmt.Sprintf("v2/campaigns/%v/hidden-offers", campaignID),
-		"",
+		url.Values{},
 		bytes.NewReader(requestBody))
 	if err != nil {
 		return err
@@ -166,7 +168,7 @@ func (c *YandexMarketClient) HideOffers(
 		return err
 	}
 
-	if hideOffersResponse.Status.IsErrorStatus() {
+	if hideOffersResponse.Status.IsError() {
 		return fmt.Errorf("failed to hide offers: %w", hideOffersResponse.Errors)
 	}
 
@@ -187,7 +189,7 @@ func (c *YandexMarketClient) GetHiddenOffers(ctx context.Context,
 
 	req, err := c.newRequest(ctx, http.MethodGet,
 		fmt.Sprintf("/v2/campaigns/%v/hidden-offers", campaignID),
-		query.Encode(),
+		query,
 		nil)
 	if err != nil {
 		return models.GetHiddenOfferResult{}, err
@@ -200,7 +202,7 @@ func (c *YandexMarketClient) GetHiddenOffers(ctx context.Context,
 		return models.GetHiddenOfferResult{}, err
 	}
 
-	if getHiddenOffersResponse.Status.IsErrorStatus() {
+	if getHiddenOffersResponse.Status.IsError() {
 		return models.GetHiddenOfferResult{}, fmt.Errorf("failed to hide offers: %w", getHiddenOffersResponse.Errors)
 	}
 
@@ -221,7 +223,7 @@ func (c *YandexMarketClient) UnhideOffers(
 
 	req, err := c.newRequest(ctx, http.MethodDelete,
 		fmt.Sprintf("/v2/campaigns/%v/hidden-offers", campaignID),
-		"",
+		url.Values{},
 		bytes.NewReader(requestBody))
 	if err != nil {
 		return err
@@ -234,7 +236,7 @@ func (c *YandexMarketClient) UnhideOffers(
 		return err
 	}
 
-	if unhideResponse.Status.IsErrorStatus() {
+	if unhideResponse.Status.IsError() {
 		return fmt.Errorf("failed to unhide offers: %w", unhideResponse.Errors)
 	}
 
@@ -255,7 +257,7 @@ func (c *YandexMarketClient) ExploreOffers(
 
 	query := o.ToQueryArgs()
 
-	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("/v2/campaigns/%v/offers", campaignID), query.Encode(), nil)
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("/v2/campaigns/%v/offers", campaignID), query, nil)
 	if err != nil {
 		return models.ExploreOffersResponse{}, err
 	}
