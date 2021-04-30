@@ -22,10 +22,10 @@ func TestMain(t *testing.M) {
 
 func getClient() *client.YandexMarketClient {
 	return client.NewYandexMarketClient(
-		client.WithUserAgent("Chromium"),
+		// client.WithUserAgent("Yandex"),
 		client.WithOAuth(os.Getenv("OAUTH_TOKEN"), os.Getenv("OAUTH_CLIENT_ID")),
 		client.WithHTTPClient(&http.Client{
-			Timeout: time.Second * 10,
+			Timeout: time.Second * 15,
 		}),
 	)
 }
@@ -215,4 +215,85 @@ func TestYandexMarketClient_Explore(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Greater(t, result.Pager.Total, int64(0))
+}
+
+func TestYandexMarketClient_FindRegions(t *testing.T) {
+	c := getClient()
+
+	regions, err := c.FindRegions(context.Background(), "Казань")
+	require.NoError(t, err)
+
+	t.Log(regions)
+
+	require.NotEmpty(t, regions)
+	assert.Equal(t, models.City, regions[0].Type)
+	assert.Equal(t, "Казань", regions[0].Name)
+}
+
+func TestYandexMarketClient_PointOfSales(t *testing.T) {
+	c := getClient()
+	campaign := getCampaign()
+	// moscowRegionID := int64(213)
+	kazanRegionID := int64(43)
+
+	initalOutlets, err := c.ListPointsOfSales(context.Background(), campaign)
+	require.NoError(t, err, "failed to list initial outlets")
+
+	initialOutletsCount := len(initalOutlets)
+
+	newOutlet, err := c.CreatePointOfSale(context.Background(), campaign, models.PointOfSale{
+		Name:       "KazanExpress",
+		Visibility: models.Hidden,
+		Type:       models.Depot,
+		WorkingSchedule: models.WorkingSchedule{
+			WorkInHoliday: false,
+			ScheduleItems: []models.ScheduleItem{
+				{
+					StartDay:  models.Monday,
+					EndDay:    models.Friday,
+					StartTime: "09:00",
+					EndTime:   "20:00",
+				},
+			},
+		},
+		Address: models.Address{
+			RegionID: kazanRegionID,
+			Street:   "ул. Петербургская",
+			Number:   "1",
+		},
+		IsMain: false,
+		Phones: []string{
+			"+7 (401) 212-22-32",
+		},
+		DeliveryRules: []models.DeliveryRule{
+			{
+				Cost:            0,
+				MinDeliveryDays: 1,
+				MaxDeliveryDays: 2,
+				PriceFreePickup: 100,
+			},
+		},
+		Emails: []string{
+			"test@mail.ru",
+		},
+
+		ShopOutletCode: "PVZ-test-1",
+	})
+
+	require.NoError(t, err, "failed to create outlet")
+
+	t.Log(newOutlet)
+
+	newOutlets, err := c.ListPointsOfSales(context.Background(), campaign)
+	require.NoError(t, err)
+
+	assert.Equal(t, initialOutletsCount+1, len(newOutlets), "number of outlets should increase after creating")
+
+	err = c.DeletePointOfSale(context.Background(), campaign, newOutlet.OutletID)
+	require.NoError(t, err, "failed to delete outlet")
+
+	newOutlets, err = c.ListPointsOfSales(context.Background(), campaign)
+	require.NoError(t, err)
+
+	assert.Equal(t, initialOutletsCount, len(newOutlets), "number of outlets should be the same after deleting")
 }

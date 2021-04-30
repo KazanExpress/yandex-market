@@ -269,5 +269,179 @@ func (c *YandexMarketClient) ExploreOffers(
 		return models.ExploreOffersResponse{}, err
 	}
 
+	if response.Status.IsError() {
+		return models.ExploreOffersResponse{}, fmt.Errorf("failed to explore offers: %w", response.Errors)
+	}
+
 	return response, nil
+}
+
+// FindRegions returns information about a region that meets the search conditions specified in the request.
+// If multiple regions are found that meet the search conditions, it returns information on each found region
+// (but no more than ten regions) in order to determine the desired region by parent regions.
+func (c *YandexMarketClient) FindRegions(ctx context.Context, regionName string) ([]models.RegionObj, error) {
+	query := url.Values{}
+	query.Add("name", regionName)
+
+	req, err := c.newRequest(ctx, http.MethodGet, "/v2/regions", query, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	response := models.RegionResponse{}
+
+	err = c.executeRequest(req, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.Status.IsError() {
+		return nil, fmt.Errorf("failed to find region: %w", response.Errors)
+	}
+
+	return response.Regions, nil
+}
+
+// CreatePointOfSale creates point of sale with given params.
+func (c *YandexMarketClient) CreatePointOfSale(
+	ctx context.Context,
+	campaignID int64,
+	outlet models.PointOfSale,
+) (models.CreateOutletResult, error) {
+	requestBody, err := json.Marshal(outlet)
+	if err != nil {
+		return models.CreateOutletResult{}, fmt.Errorf("json marshal: %w", err)
+	}
+
+	req, err := c.newRequest(ctx, http.MethodPost,
+		fmt.Sprintf("/v2/campaigns/%d/outlets", campaignID), url.Values{}, bytes.NewReader(requestBody))
+	if err != nil {
+		return models.CreateOutletResult{}, err
+	}
+
+	response := models.CreatePointOfSaleResponse{}
+
+	err = c.executeRequest(req, &response)
+	if err != nil {
+		return models.CreateOutletResult{}, err
+	}
+
+	if response.Status.IsError() {
+		return models.CreateOutletResult{}, fmt.Errorf("failed to create point of sale: %w", response.Errors)
+	}
+
+	return response.Result, nil
+}
+
+// UpdatePointOfSale updates point of sale.
+func (c *YandexMarketClient) UpdatePointOfSale(
+	ctx context.Context,
+	campaignID int64,
+	outlet models.PointOfSale,
+) error {
+	requestBody, err := json.Marshal(outlet)
+	if err != nil {
+		return fmt.Errorf("json marshal: %w", err)
+	}
+
+	req, err := c.newRequest(ctx, http.MethodPut,
+		fmt.Sprintf("/v2/campaigns/%d/outlets", campaignID), url.Values{}, bytes.NewReader(requestBody))
+	if err != nil {
+		return err
+	}
+
+	response := models.CommonResponse{}
+
+	err = c.executeRequest(req, &response)
+	if err != nil {
+		return err
+	}
+
+	if response.Status.IsError() {
+		return fmt.Errorf("failed to update point of sale: %w", response.Errors)
+	}
+
+	return nil
+}
+
+// GetPointOfSale returns point of sale by id.
+func (c *YandexMarketClient) GetPointOfSale(
+	ctx context.Context,
+	campaignID, outletID int64,
+) (models.PointOfSale, error) {
+	req, err := c.newRequest(ctx, http.MethodGet,
+		fmt.Sprintf("/v2/campaigns/%d/outlets/%d", campaignID, outletID), url.Values{}, nil)
+	if err != nil {
+		return models.PointOfSale{}, err
+	}
+
+	response := models.GetPointOfSaleResponse{}
+
+	err = c.executeRequest(req, &response)
+	if err != nil {
+		return models.PointOfSale{}, err
+	}
+
+	if response.Status.IsError() {
+		return models.PointOfSale{}, fmt.Errorf("failed to get point of sale: %w", response.Errors)
+	}
+
+	return response.PointOfSale, nil
+}
+
+// DeletePointOfSale deletes the store's point of sale in Yandex.Market.
+func (c *YandexMarketClient) DeletePointOfSale(
+	ctx context.Context,
+	campaignID, outletID int64,
+) error {
+	req, err := c.newRequest(ctx, http.MethodDelete,
+		fmt.Sprintf("/v2/campaigns/%d/outlets/%d", campaignID, outletID), url.Values{}, nil)
+	if err != nil {
+		return err
+	}
+
+	response := models.CommonResponse{}
+
+	err = c.executeRequest(req, &response)
+	if err != nil {
+		return err
+	}
+
+	if response.Status.IsError() {
+		return fmt.Errorf("failed to delete point of sale: %w", response.Errors)
+	}
+
+	return nil
+}
+
+// ListPointsOfSales returns a list of the store's points of sale.
+func (c *YandexMarketClient) ListPointsOfSales(
+	ctx context.Context,
+	campaignID int64,
+	opts ...models.GetPointsOfSaleOption,
+) ([]models.PointOfSale, error) {
+	o := models.GetPointsOfSaleOptions{}
+
+	for _, opt := range opts {
+		opt(&o)
+	}
+
+	req, err := c.newRequest(ctx, http.MethodGet,
+		fmt.Sprintf("/v2/campaigns/%d/outlets", campaignID), o.ToQueryArgs(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	response := models.GetPointsOfSaleResponse{}
+
+	err = c.executeRequest(req, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.Status.IsError() {
+		return nil, fmt.Errorf("failed to get points of sale: %w", response.Errors)
+	}
+
+	return response.Outlets, nil
 }

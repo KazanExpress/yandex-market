@@ -130,6 +130,10 @@ func (c *YandexMarketClient) executeRequest(req *http.Request, jsonResponse inte
 		return fmt.Errorf("unmarshal json: %w", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("status code: %d; %v", resp.StatusCode, resp)
+	}
+
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			c.options.Logger.Error("failed to close response body",

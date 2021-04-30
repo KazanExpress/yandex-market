@@ -2,6 +2,7 @@ package models
 
 // ExploreOffersResponse explore response structure.
 type ExploreOffersResponse struct {
+	CommonResponse
 	Offers []OfferExploreModel `json:"offers"`
 	Pager  Pager               `json:"pager"`
 }
